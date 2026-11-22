@@ -8,6 +8,7 @@ Kitaptaki her bölümün çalışan projesi bu depodadır.
 | 2 | Dijital Kartvizit SaaS | `projects/02-kartvizit` | `bolum-02` |
 | 3 | Randevu Sistemi | `projects/03-randevu` | `bolum-03` |
 | 4 | Servis Takip | `projects/04-servis-takip` | `bolum-04` |
+| 5 | Ön Muhasebe ve Fatura | `projects/05-on-muhasebe` | `bolum-05` |
 
 ## Bir projeyi çalıştırmak
 
