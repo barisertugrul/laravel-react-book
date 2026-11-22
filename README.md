@@ -5,6 +5,7 @@ Kitaptaki her bölümün çalışan projesi bu depodadır.
 | Bölüm | Proje | Klasör | Etiket |
 |---|---|---|---|
 | 1 | QR Menü | `projects/01-qr-menu` | `bolum-01` |
+| 2 | Dijital Kartvizit SaaS | `projects/02-kartvizit` | `bolum-02` |
 
 ## Bir projeyi çalıştırmak
 
@@ -19,7 +20,7 @@ php artisan storage:link
 composer run dev
 ```
 
-Tarayıcıda `http://localhost:8000` adresini açın. Giriş: `test@example.com` / `password`.
+Tarayıcıda `http://localhost:8000` adresini açın. Giriş: `test@example.com` / `password` (Bölüm 2'de ayrıca `pro@example.com`).
 
 Belirli bir bölümün bittiği hali görmek için: `git checkout bolum-01`
 
