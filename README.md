@@ -9,6 +9,7 @@ Kitaptaki her bölümün çalışan projesi bu depodadır.
 | 3 | Randevu Sistemi | `projects/03-randevu` | `bolum-03` |
 | 4 | Servis Takip | `projects/04-servis-takip` | `bolum-04` |
 | 5 | Ön Muhasebe ve Fatura | `projects/05-on-muhasebe` | `bolum-05` |
+| 6 | E-Ticaret | `projects/06-e-ticaret` | `bolum-06` |
 
 ## Bir projeyi çalıştırmak
 
