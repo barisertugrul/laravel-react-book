@@ -3,8 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\Card;
+use App\Models\CardSlugHistory;
 use App\Support\QrCode;
 use App\Support\VCard;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response as HttpResponse;
 use Inertia\Inertia;
@@ -29,6 +31,16 @@ class PublicCardController extends Controller
             'qrSvg' => QrCode::svg($card->public_url),
             'isOwner' => $isOwner,
         ]);
+    }
+
+    /** Eski bir adrese gelen ziyaretçiyi kartın güncel adresine yönlendirir. */
+    public static function redirectFromOldSlug(Request $request, string $routeName): RedirectResponse
+    {
+        $history = CardSlugHistory::with('card')->where('slug', $request->route('card'))->first();
+
+        abort_if($history === null, 404);
+
+        return redirect()->route($routeName, $history->card->slug, 301);
     }
 
     public function vcard(Card $card): HttpResponse

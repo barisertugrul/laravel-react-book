@@ -117,6 +117,11 @@ export default function CardForm({ card, plan }: { card?: Card; plan: PlanInfo }
                                 className="flex-1 bg-transparent px-3 py-2 outline-none"
                             />
                         </div>
+                        {card && (
+                            <p className="text-xs text-muted-foreground">
+                                Adresi değiştirirseniz eski adres (ve basılı QR kodlarınız) yeni adrese yönlendirilir.
+                            </p>
+                        )}
                         <InputError message={errors.slug} />
                     </div>
                     <div className="grid gap-4 sm:grid-cols-2">

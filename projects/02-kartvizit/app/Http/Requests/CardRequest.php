@@ -27,6 +27,8 @@ class CardRequest extends FormRequest
                 'nullable', 'string', 'min:3', 'max:60', 'lowercase', 'alpha_dash:ascii',
                 Rule::notIn(Card::RESERVED_SLUGS),
                 Rule::unique('cards', 'slug')->ignore($card),
+                // Başka bir kartın eski adresi de alınamaz: o kartın basılı QR kodları buraya yönlenir
+                Rule::unique('card_slug_histories', 'slug')->where(fn ($q) => $q->where('card_id', '!=', $card?->id ?? 0)),
             ],
             'title' => ['nullable', 'string', 'max:80'],
             'company' => ['nullable', 'string', 'max:80'],
@@ -61,6 +63,7 @@ class CardRequest extends FormRequest
         return [
             'slug.alpha_dash' => 'Adres yalnızca küçük harf, rakam ve tire içerebilir.',
             'slug.not_in' => 'Bu adres sistem tarafından kullanılıyor, başka bir adres seçin.',
+            'slug.unique' => 'Bu adres alınmış ya da daha önce başka bir kart tarafından kullanılmış.',
             'theme.enum' => 'Seçtiğiniz tema planınızda yok.',
             'phone.regex' => 'Telefon yalnızca rakam, boşluk, +, ( ) ve - içerebilir.',
         ];

@@ -4,6 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Enums\AppointmentStatus;
 use App\Models\Appointment;
+use App\Models\User;
+use App\Notifications\AppointmentCancelledByCustomer;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -28,6 +31,9 @@ class CancelAppointmentController extends Controller
     {
         if ($appointment->status === AppointmentStatus::Confirmed) {
             $appointment->update(['status' => AppointmentStatus::Cancelled]);
+
+            // İlk sürümde işletme, müşterinin iptalini ancak takvime bakınca fark ediyordu.
+            Notification::send(User::all(), new AppointmentCancelledByCustomer($appointment));
         }
 
         return back();

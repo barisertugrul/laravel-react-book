@@ -50,6 +50,36 @@ class Card extends Model
         ];
     }
 
+    /**
+     * Adres değiştiğinde eskisini geçmişe yaz (bkz. "Güvenlik incelemesi").
+     * Kart eski adresine geri dönerse o adres geçmişten silinir.
+     */
+    protected static function booted(): void
+    {
+        static::updating(function (Card $card) {
+            if (! $card->isDirty('slug')) {
+                return;
+            }
+
+            $card->slugHistories()->updateOrCreate(['slug' => $card->getOriginal('slug')]);
+            $card->slugHistories()->where('slug', $card->slug)->delete();
+        });
+    }
+
+    /** @return HasMany<CardSlugHistory, $this> */
+    public function slugHistories(): HasMany
+    {
+        return $this->hasMany(CardSlugHistory::class);
+    }
+
+    /** Bu adres başka bir kartın eski adresi mi? */
+    public static function slugBelongsToAnotherCardsHistory(string $slug, ?int $cardId = null): bool
+    {
+        return CardSlugHistory::where('slug', $slug)
+            ->when($cardId, fn ($q) => $q->where('card_id', '!=', $cardId))
+            ->exists();
+    }
+
     /** @return BelongsTo<User, $this> */
     public function user(): BelongsTo
     {
@@ -85,7 +115,8 @@ class Card extends Model
         $i = 2;
 
         while (in_array($slug, self::RESERVED_SLUGS, true)
-            || static::where('slug', $slug)->when($ignoreId, fn ($q) => $q->whereKeyNot($ignoreId))->exists()) {
+            || static::where('slug', $slug)->when($ignoreId, fn ($q) => $q->whereKeyNot($ignoreId))->exists()
+            || self::slugBelongsToAnotherCardsHistory($slug, $ignoreId)) {
             $slug = $base.'-'.$i++;
         }
 

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\CategoryRequest;
 use App\Models\Category;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -40,7 +41,11 @@ class CategoryController extends Controller
 
     public function destroy(Category $category): RedirectResponse
     {
-        // Ürünler, migration'daki cascadeOnDelete sayesinde birlikte silinir.
+        // Ürün satırlarını veritabanı siler (cascadeOnDelete); ama veritabanı diskteki
+        // dosyalardan habersizdir. Görselleri kayıtlar silinmeden önce biz siliyoruz.
+        $paths = $category->products()->whereNotNull('image_path')->pluck('image_path');
+        Storage::disk('public')->delete($paths->all());
+
         $category->delete();
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Kategori silindi.']);
