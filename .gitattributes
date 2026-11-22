@@ -1,0 +1,7 @@
+# Satır sonları depoda LF olarak tutulur (Windows/macOS/Linux tutarlılığı)
+* text=auto eol=lf
+*.ps1 text eol=crlf
+*.png binary
+*.jpg binary
+*.pdf binary
+*.docx binary
