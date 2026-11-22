@@ -6,6 +6,7 @@ Kitaptaki her bölümün çalışan projesi bu depodadır.
 |---|---|---|---|
 | 1 | QR Menü | `projects/01-qr-menu` | `bolum-01` |
 | 2 | Dijital Kartvizit SaaS | `projects/02-kartvizit` | `bolum-02` |
+| 3 | Randevu Sistemi | `projects/03-randevu` | `bolum-03` |
 
 ## Bir projeyi çalıştırmak
 
