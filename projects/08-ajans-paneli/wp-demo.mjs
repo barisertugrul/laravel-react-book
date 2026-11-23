@@ -24,6 +24,8 @@ const sites = [
 ];
 
 const MAX_ATTEMPTS = 5;
+const children = new Set();
+process.on('exit', () => children.forEach((child) => child.kill()));
 let shuttingDown = false; // Ctrl+C: kapanan alt süreçler "çöktü" sayılmasın
 process.on('SIGINT', () => {
     shuttingDown = true;
@@ -100,24 +102,35 @@ async function supervise(site, isRestart = false) {
             const child = spawn(process.execPath, [fileURLToPath(import.meta.url), `--site=${site.port}`], {
                 stdio: ['ignore', 'pipe', 'pipe'],
             });
-            let settled = false;
-            let crashedAfterReady = false;
+            children.add(child);
+            // Yeni deneme, eski süreç portu bıraktıktan SONRA başlar (yoksa EADDRINUSE)
+            const exited = new Promise((r) => child.once('exit', () => (children.delete(child), r())));
+
+            let settled = false; // açılış sonuçlandı mı (başarılı ya da değil)
+            let wasReady = false; // site hazır oldu mu: yalnızca o zaman "çalışırken durdu" denir
+            let restarting = false;
+
             const finish = (ok) => {
                 if (settled) return;
                 settled = true;
                 clearTimeout(timer);
-                if (!ok) child.kill();
-                resolve(ok);
+                if (ok) {
+                    wasReady = true;
+                    resolve(true);
+                } else {
+                    child.kill();
+                    exited.then(() => resolve(false));
+                }
             };
             const timer = setTimeout(() => finish(false), BOOT_TIMEOUT_MS);
 
-            // Hazır olduktan sonraki çöküş: yeniden başlat
+            // Hazır olduktan sonraki çöküş: süreç kapanınca TEK bir yeniden başlatma
             const crashed = () => {
-                if (!settled || crashedAfterReady || shuttingDown) return;
-                crashedAfterReady = true;
+                if (!wasReady || restarting || shuttingDown) return;
+                restarting = true;
                 child.kill();
                 console.log(`  ✗ ${site.name} çalışırken durdu; yeniden başlatılıyor (panelde siteyi yeniden bağlamanız gerekecek)…`);
-                setTimeout(() => supervise(site, true), 2000);
+                exited.then(() => setTimeout(() => supervise(site, true), 2000));
             };
 
             // Playground hatayı worker iş parçacığında yazar ama süreci kapatmaz: çıktıdan yakalıyoruz
@@ -127,14 +140,13 @@ async function supervise(site, isRestart = false) {
                     if (text.includes('KUMANDA_READY')) return finish(true);
                     out.write(text);
                     if (text.includes('ErrnoError')) {
-                        settled ? crashed() : finish(false);
+                        wasReady ? crashed() : finish(false);
                     }
                 });
             watch(child.stdout, process.stdout);
             watch(child.stderr, process.stderr);
 
-            child.on('exit', () => (settled ? crashed() : finish(false)));
-            process.on('exit', () => child.kill());
+            child.on('exit', () => (wasReady ? crashed() : finish(false)));
         });
 
         if (ready) {
@@ -143,7 +155,7 @@ async function supervise(site, isRestart = false) {
         }
 
         console.log(`  ↻ ${site.name} açılamadı (deneme ${attempt}/${MAX_ATTEMPTS}), yeniden deneniyor…`);
-        await new Promise((r) => setTimeout(r, 2000)); // portun boşalması için
+        await new Promise((r) => setTimeout(r, 2000));
     }
 
     console.log(`  ✗ ${site.name} ${MAX_ATTEMPTS} denemede açılamadı.`);
