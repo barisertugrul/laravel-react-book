@@ -2,11 +2,3 @@ node_modules/
 .DS_Store
 Thumbs.db
 *.log
-
-# Bu depo (laravel-react-book) okura açık: yalnızca projects/ ve README.
-# Aşağıdakiler aynı klasörde duran ÖZEL depoda (laravel-react-book-project, .git-ozel):
-/kitap/
-/tools/
-/.calisma/
-/.git-ozel/
-/.git-eski/
