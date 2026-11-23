@@ -2,7 +2,8 @@ node_modules/
 .DS_Store
 Thumbs.db
 *.log
-kitap/cikti/*.tmp
+# Derlenmiş kitap çıktıları (PDF/Word) depoya gönderilmez: yalnızca yazarın bilgisayarında
+kitap/cikti/
 
 # Yerel çalışma notları (depoya gönderilmez)
 /.calisma/
