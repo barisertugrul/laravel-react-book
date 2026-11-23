@@ -10,6 +10,7 @@ Kitaptaki her bölümün çalışan projesi bu depodadır.
 | 4 | Servis Takip | `projects/04-servis-takip` | `bolum-04` |
 | 5 | Ön Muhasebe ve Fatura | `projects/05-on-muhasebe` | `bolum-05` |
 | 6 | E-Ticaret | `projects/06-e-ticaret` | `bolum-06` |
+| 7 | Satın Alma Sonrası Lisans | `projects/07-lisans` | `bolum-07` |
 
 ## Bir projeyi çalıştırmak
 
@@ -25,6 +26,8 @@ composer run dev
 ```
 
 Tarayıcıda `http://localhost:8000` adresini açın. Giriş: `test@example.com` / `password` (Bölüm 2'de ayrıca `pro@example.com`).
+
+Bölüm 7'de `migrate --seed` komutundan önce lisans imza anahtarını üretin: `php artisan license:keygen`.
 
 Belirli bir bölümün bittiği hali görmek için: `git checkout bolum-01`
 
