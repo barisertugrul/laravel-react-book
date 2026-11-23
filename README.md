@@ -11,6 +11,7 @@ Kitaptaki her bölümün çalışan projesi bu depodadır.
 | 5 | Ön Muhasebe ve Fatura | `projects/05-on-muhasebe` | `bolum-05` |
 | 6 | E-Ticaret | `projects/06-e-ticaret` | `bolum-06` |
 | 7 | Satın Alma Sonrası Lisans | `projects/07-lisans` | `bolum-07` |
+| 8 | WP Ajans Paneli I (Kumanda) | `projects/08-ajans-paneli` | `bolum-08` |
 
 ## Bir projeyi çalıştırmak
 
@@ -29,10 +30,10 @@ Tarayıcıda `http://localhost:8000` adresini açın. Giriş: `test@example.com`
 
 Bölüm 7'de `migrate --seed` komutundan önce lisans imza anahtarını üretin: `php artisan license:keygen`.
 
+Bölüm 8'deki WordPress eklentisi `projects/08-ajans-paneli/wp-plugin/ajans-asistani` klasöründe. Eklenti kurulu üç demo WordPress sitesi (WordPress Playground; yalnızca Node.js gerekir): `cd projects/08-ajans-paneli && npm install && npm run wp-demo`.
+
 Belirli bir bölümün bittiği hali görmek için: `git checkout bolum-01`
 
 ## Klasörler
 - `projects/` — bölüm projeleri
 - `packages/` — bölümlerle büyüyen ortak başlangıç kiti (Bölüm 2'den itibaren)
-- `kitap/` — kitap kaynağı (Markdown) ve görseller
-- `tools/screenshots/` — kitaptaki ekran görüntülerini yeniden üreten betikler
