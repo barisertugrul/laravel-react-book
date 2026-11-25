@@ -16,6 +16,13 @@ use Illuminate\Support\Facades\Route;
 
 Route::inertia('/', 'welcome')->name('home');
 
+// Yayındaki sürüm (build.sh paketin köküne VERSION yazar). Dağıtım betiği, symlink değiştikten sonra
+// PHP'nin yeni sürüme geçtiğini buradan anlar: paylaşımlı hostingte realpath önbelleği eskiyi bir süre tutar.
+Route::get('surum', fn () => response(is_file(base_path('VERSION')) ? trim(file_get_contents(base_path('VERSION'))) : 'yerel', 200, [
+    'Content-Type' => 'text/plain; charset=utf-8',
+    'Cache-Control' => 'no-store',
+]))->name('version');
+
 // Sahte abonelik sağlayıcısı (gerçekte sağlayıcının sitesi) ve onun bildirimi.
 // fake-billing: canlıda (izin verilmedikçe) bu adresler hiç yokmuş gibi 404 döner.
 Route::middleware('fake-billing')->group(function () {
