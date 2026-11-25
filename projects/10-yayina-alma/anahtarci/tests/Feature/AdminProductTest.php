@@ -146,6 +146,26 @@ class AdminProductTest extends TestCase
         $this->assertTrue($license->fresh()->isActive());
     }
 
+    public function test_the_admin_decides_which_plan_is_highlighted_and_with_what_label(): void
+    {
+        $product = Product::factory()->create();
+
+        $this->actingAs($this->admin)->post(route('admin.plans.store', $product), ['name' => 'Tek site', 'price' => '490', 'max_sites' => 1, 'sort' => 0]);
+        $this->post(route('admin.plans.store', $product), ['name' => 'Sınırsız', 'price' => '1990', 'badge' => 'Ajanslar için', 'sort' => 1]);
+        $this->post(route('admin.plans.store', $product), ['name' => 'X', 'price' => '10', 'badge' => str_repeat('a', 41)])
+            ->assertSessionHasErrors('badge');
+
+        // Bölüm 7'deki gibi "ikinci plan" değil: etiketi olan plan vurgulanır, olmayan vurgusuz
+        $this->get(route('home'))->assertInertia(fn (Assert $page) => $page
+            ->where('products.0.plans.0.badge', null)
+            ->where('products.0.plans.1.badge', 'Ajanslar için'));
+
+        // Etiketi kaldırmak vurguyu kaldırır
+        $plan = $product->plans()->where('name', 'Sınırsız')->sole();
+        $this->put(route('admin.plans.update', $plan), ['name' => 'Sınırsız', 'price' => '1990', 'badge' => ''])->assertSessionHasNoErrors();
+        $this->assertNull($plan->fresh()->badge);
+    }
+
     public function test_the_edit_page_shows_plans_with_their_sales(): void
     {
         $plan = Plan::factory()->create();

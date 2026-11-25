@@ -31,18 +31,20 @@ class DatabaseSeeder extends Seeder
         $catalog = [
             ['Ajans Asistanı', 'ajans-asistani', 'Müşteri sitelerinizi tek panelden izleyin: sağlık kontrolleri, güncellemeler, yedek durumu.',
                 'Ajans panelinize (Bölüm 8) bağlanan yardımcı eklenti. Sitenin WordPress ve eklenti sürümlerini, PHP sürümünü ve son yedeğini güvenli bir kanaldan bildirir.',
-                [['Tek site', '1.490,00', 1], ['5 site', '3.990,00', 5], ['Sınırsız', '7.990,00', null]]],
+                [['Tek site', '1.490,00', 1], ['5 site', '3.990,00', 5, 'En çok tercih edilen'], ['Sınırsız', '7.990,00', null]]],
             ['Form Kalesi', 'form-kalesi', 'İletişim formlarınızı spam ve bot saldırılarından koruyun.', null,
-                [['Tek site', '690,00', 1], ['5 site', '1.790,00', 5], ['Sınırsız', '3.490,00', null]]],
+                [['Tek site', '690,00', 1], ['5 site', '1.790,00', 5, 'En çok tercih edilen'], ['Sınırsız', '3.490,00', null]]],
             ['Hızlı Yedek', 'hizli-yedek', 'Zamanlanmış yedekler ve tek tıkla geri yükleme.', null,
-                [['Tek site', '990,00', 1], ['5 site', '2.490,00', 5], ['Sınırsız', '4.990,00', null]]],
+                [['Tek site', '990,00', 1], ['5 site', '2.490,00', 5, 'En çok tercih edilen'], ['Sınırsız', '4.990,00', null]]],
         ];
 
         foreach ($catalog as [$name, $slug, $summary, $description, $plans]) {
             $product = Product::create(compact('name', 'slug', 'summary', 'description'));
 
-            foreach ($plans as $i => [$planName, $price, $sites]) {
-                $product->plans()->create(['name' => $planName, 'price' => Money::parse($price), 'max_sites' => $sites, 'sort' => $i]);
+            foreach ($plans as $i => $plan) {
+                [$planName, $price, $sites] = $plan;
+                $badge = $plan[3] ?? null; // vitrinde vurgu etiketi (Bölüm 10); çoğu planda yok
+                $product->plans()->create(['name' => $planName, 'price' => Money::parse($price), 'max_sites' => $sites, 'badge' => $badge, 'sort' => $i]);
             }
         }
 

@@ -16,9 +16,10 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property string $name
  * @property int $price
  * @property int|null $max_sites null: sınırsız
+ * @property string|null $badge vitrinde vurgu etiketi; null: vurgu yok
  * @property-read Product $product
  */
-#[Fillable(['product_id', 'name', 'price', 'max_sites', 'sort'])]
+#[Fillable(['product_id', 'name', 'price', 'max_sites', 'badge', 'sort'])]
 class Plan extends Model
 {
     /** @use HasFactory<PlanFactory> */

@@ -7,6 +7,7 @@ export type Plan = {
     name: string;
     price: Cents;
     max_sites: number | null; // null: sınırsız
+    badge?: string | null; // vitrinde vurgu etiketi; null: vurgu yok
     sort?: number;
     orders_count?: number; // yönetim paneli: sipariş almış plan silinemez
     licenses_count?: number;

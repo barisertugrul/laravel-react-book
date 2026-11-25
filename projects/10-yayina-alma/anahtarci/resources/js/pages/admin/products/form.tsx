@@ -32,6 +32,16 @@ function PlanFields({ plan, errors, prefix }: { plan?: Plan; errors: Record<stri
             <Field id={`${prefix}-price`} name="price" label="Fiyat (₺)" inputMode="decimal" placeholder="1490,00" defaultValue={plan ? toMoneyInput(plan.price) : ''} error={errors.price} />
             <Field id={`${prefix}-max_sites`} name="max_sites" label="Site sınırı" type="number" min={1} placeholder="sınırsız" defaultValue={plan?.max_sites ?? ''} hint="Boş: sınırsız" error={errors.max_sites} />
             <Field id={`${prefix}-sort`} name="sort" label="Sıra" type="number" min={0} defaultValue={plan?.sort ?? 0} error={errors.sort} />
+            <Field
+                id={`${prefix}-badge`}
+                name="badge"
+                label="Vitrin etiketi"
+                placeholder="En çok tercih edilen"
+                maxLength={40}
+                defaultValue={plan?.badge ?? ''}
+                hint="Doluysa plan vitrinde vurgulanır. Boş: vurgu yok."
+                error={errors.badge}
+            />
         </>
     );
 }
@@ -44,11 +54,12 @@ function PlanRow({ plan }: { plan: Plan }) {
             <div className="mb-3 flex items-center justify-between text-sm">
                 <span className="font-medium">
                     {plan.name} · {formatMoney(plan.price)} · {formatSites(plan.max_sites)}
+                    {plan.badge && <span className="ml-2 rounded-full bg-indigo-100 px-2 py-0.5 text-xs text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-200">{plan.badge}</span>}
                 </span>
                 <span className="text-muted-foreground">{plan.licenses_count} lisans satıldı</span>
             </div>
             {/* errorBag: sayfadaki her formun hataları ayrı (aynı alan adları birbirine karışmasın) */}
-            <Form {...PlanController.update.form(plan.id)} errorBag={`plan-${plan.id}`} options={{ preserveScroll: true }} className="grid gap-3 sm:grid-cols-5">
+            <Form {...PlanController.update.form(plan.id)} errorBag={`plan-${plan.id}`} options={{ preserveScroll: true }} className="grid gap-3 sm:grid-cols-3 lg:grid-cols-6">
                 {({ processing, errors }) => (
                     <>
                         <PlanFields plan={plan} errors={errors} prefix={`plan-${plan.id}`} />
@@ -136,7 +147,7 @@ export default function ProductForm({ product, plans = [] }: { product?: Product
                         <div className="rounded-xl border border-dashed p-4">
                             <h3 className="mb-3 text-sm font-medium">Plan ekle</h3>
                             {/* Başarılı eklemeden sonra form boşalsın: resetOnSuccess */}
-                            <Form {...PlanController.store.form(product.id)} errorBag="new-plan" resetOnSuccess options={{ preserveScroll: true }} className="grid gap-3 sm:grid-cols-5">
+                            <Form {...PlanController.store.form(product.id)} errorBag="new-plan" resetOnSuccess options={{ preserveScroll: true }} className="grid gap-3 sm:grid-cols-3 lg:grid-cols-6">
                                 {({ processing, errors }) => (
                                     <>
                                         <PlanFields errors={errors} prefix="new-plan" />

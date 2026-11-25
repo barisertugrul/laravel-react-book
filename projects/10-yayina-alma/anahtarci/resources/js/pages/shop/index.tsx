@@ -7,14 +7,16 @@ import { formatMoney } from '@/lib/money';
 import { login } from '@/routes';
 import type { Plan, Product } from '@/types';
 
-function PlanCard({ plan, featured }: { plan: Plan; featured: boolean }) {
+function PlanCard({ plan }: { plan: Plan }) {
+    // Vurgu ve etiketi yönetim belirler (Bölüm 10); Bölüm 7'de her ürünün ikinci planı sabit vurgulanıyordu
+    const featured = Boolean(plan.badge);
     const { auth } = usePage().props;
 
     return (
         <div className={`flex flex-col rounded-xl border bg-white p-5 dark:bg-neutral-900 ${featured ? 'border-indigo-500 ring-1 ring-indigo-500' : ''}`}>
             <div className="flex items-center justify-between">
                 <h3 className="font-medium">{plan.name}</h3>
-                {featured && <span className="rounded-full bg-indigo-100 px-2 py-0.5 text-xs text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-200">En çok tercih edilen</span>}
+                {featured && <span className="rounded-full bg-indigo-100 px-2 py-0.5 text-xs text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-200">{plan.badge}</span>}
             </div>
             <div className="mt-3 text-3xl font-semibold tabular-nums">{formatMoney(plan.price)}</div>
             <div className="text-sm text-muted-foreground">tek seferlik ödeme</div>
@@ -77,7 +79,7 @@ export default function Store({ products, demo }: { products: Product[]; demo: b
                         <p className="mt-1 text-muted-foreground">{product.summary}</p>
                         {product.description && <p className="mt-3 max-w-3xl text-sm">{product.description}</p>}
                         <div className="mt-5 grid gap-4 md:grid-cols-3">
-                            {product.plans?.map((plan, i) => <PlanCard key={plan.id} plan={plan} featured={i === 1} />)}
+                            {product.plans?.map((plan) => <PlanCard key={plan.id} plan={plan} />)}
                         </div>
                     </section>
                 ))}

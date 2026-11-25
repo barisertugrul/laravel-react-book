@@ -26,6 +26,8 @@ class PlanRequest extends FormRequest
             'price' => ['required', 'regex:/^\d{1,7}([.,]\d{1,2})?$/'],
             // Boş: sınırsız
             'max_sites' => ['nullable', 'integer', 'min:1', 'max:10000'],
+            // Doluysa plan vitrinde vurgulanır ve bu etiketi taşır ("En çok tercih edilen"); boş: vurgu yok
+            'badge' => ['nullable', 'string', 'max:40'],
             'sort' => ['integer', 'min:0', 'max:255'],
         ];
     }
@@ -39,6 +41,6 @@ class PlanRequest extends FormRequest
     /** @return array<string, string> */
     public function attributes(): array
     {
-        return ['name' => 'plan adı', 'price' => 'fiyat', 'max_sites' => 'site sınırı', 'sort' => 'sıra'];
+        return ['name' => 'plan adı', 'price' => 'fiyat', 'max_sites' => 'site sınırı', 'badge' => 'vitrin etiketi', 'sort' => 'sıra'];
     }
 }

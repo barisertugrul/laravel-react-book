@@ -14,7 +14,7 @@ class StoreController extends Controller
     {
         return Inertia::render('shop/index', [
             'products' => Product::where('is_active', true)
-                ->with('plans:id,product_id,name,price,max_sites')
+                ->with('plans:id,product_id,name,price,max_sites,badge')
                 ->orderBy('id')
                 ->get(['id', 'name', 'slug', 'summary', 'description']),
             // Canlıda sahte ödeme bilerek açıksa ziyaretçi uyarılır (Bölüm 10)
