@@ -1,5 +1,6 @@
 <?php
 
+use App\Billing\Plan;
 use App\Http\Controllers\AgencyController;
 use App\Http\Controllers\Billing\BillingController;
 use App\Http\Controllers\Billing\FakeBillingProviderController;
@@ -13,8 +14,12 @@ use App\Http\Controllers\PackageDownloadController;
 use App\Http\Controllers\SiteCheckController;
 use App\Http\Controllers\SiteController;
 use Illuminate\Support\Facades\Route;
+use Inertia\Inertia;
 
-Route::inertia('/', 'welcome')->name('home');
+// Tanıtım sayfası: başlangıç kitinin İngilizce "welcome" sayfası yerine ürünün kendisi ve planları (Bölüm 10)
+Route::get('/', fn () => Inertia::render('welcome', [
+    'plans' => array_map(fn (Plan $plan) => $plan->toArray(), Plan::all()),
+]))->name('home');
 
 // Yayındaki sürüm (build.sh paketin köküne VERSION yazar). Dağıtım betiği, symlink değiştikten sonra
 // PHP'nin yeni sürüme geçtiğini buradan anlar: paylaşımlı hostingte realpath önbelleği eskiyi bir süre tutar.
