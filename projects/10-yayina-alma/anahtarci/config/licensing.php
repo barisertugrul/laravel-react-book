@@ -2,7 +2,12 @@
 
 return [
     // fake: hesap gerektirmeyen, geliştirme ve testler için sahte ödeme sağlayıcısı (Bölüm 6)
-    'payment_provider' => env('PAYMENT_PROVIDER', 'fake'),
+    // Varsayılan YOK: tanımsız bırakılan sağlayıcı sessizce "fake"e düşmez, açık bir hata verir (Bölüm 10).
+    'payment_provider' => env('PAYMENT_PROVIDER'),
+
+    // Sahte sağlayıcı canlıda (APP_ENV=production) yasak. Yalnızca demo sunucusu bilerek açar;
+    // açıkken vitrinde "Demo: gerçek ödeme alınmaz" şeridi görünür.
+    'allow_fake' => (bool) env('PAYMENT_ALLOW_FAKE', false),
 
     'fake' => [
         // Sahte sağlayıcının webhook'ları imzaladığı gizli anahtar (HMAC)

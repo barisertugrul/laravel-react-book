@@ -23,17 +23,13 @@ class AppServiceProvider extends ServiceProvider
     public function register(): void
     {
         // Uygulama PaymentGateway istediğinde config'de seçilen sağlayıcı verilir
-        $this->app->bind(PaymentGateway::class, function ($app) {
-            $provider = config('licensing.payment_provider');
-
-            if ($provider === 'fake' && $app->isProduction()) {
-                throw new LogicException('Canlı ortamda sahte ödeme sağlayıcısı kullanılamaz.');
-            }
-
-            return match ($provider) {
-                'fake' => new FakeGateway,
-                default => throw new InvalidArgumentException("Bilinmeyen ödeme sağlayıcısı: {$provider}"),
-            };
+        // Canlıda sahte sağlayıcı yasak (demo sunucusu PAYMENT_ALLOW_FAKE ile bilerek açabilir, Bölüm 10)
+        $this->app->bind(PaymentGateway::class, fn () => match (config('licensing.payment_provider')) {
+            'fake' => FakeGateway::allowed()
+                ? new FakeGateway
+                : throw new LogicException('Canlı ortamda sahte ödeme sağlayıcısı kullanılamaz.'),
+            null, '' => throw new LogicException('Ödeme sağlayıcısı tanımlı değil: .env dosyasına PAYMENT_PROVIDER yazın.'),
+            default => throw new InvalidArgumentException('Bilinmeyen ödeme sağlayıcısı: '.config('licensing.payment_provider')),
         });
     }
 

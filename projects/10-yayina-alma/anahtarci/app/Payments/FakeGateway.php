@@ -11,6 +11,19 @@ use Illuminate\Support\Facades\URL;
  */
 class FakeGateway implements PaymentGateway
 {
+    /** Sahte sağlayıcı kullanılabilir mi? Geliştirmede evet; canlıda yalnızca demo sunucusu açarsa. */
+    public static function allowed(): bool
+    {
+        return config('licensing.payment_provider') === 'fake'
+            && (! app()->isProduction() || config('licensing.allow_fake'));
+    }
+
+    /** Canlıda bilerek açılmış demo mu? (vitrinde uyarı şeridi için) */
+    public static function isDemo(): bool
+    {
+        return self::allowed() && app()->isProduction();
+    }
+
     public function name(): string
     {
         return 'fake';

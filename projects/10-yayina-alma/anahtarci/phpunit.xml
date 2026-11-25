@@ -20,6 +20,8 @@
     <php>
         <env name="APP_ENV" value="testing"/>
         <env name="LICENSE_SIGNING_KEY" value=""/>
+        <env name="PAYMENT_PROVIDER" value="fake"/>
+        <env name="PAYMENT_ALLOW_FAKE" value="false"/>
         <env name="APP_MAINTENANCE_DRIVER" value="file"/>
         <env name="BCRYPT_ROUNDS" value="4"/>
         <env name="BROADCAST_CONNECTION" value="null"/>

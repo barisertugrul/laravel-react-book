@@ -35,13 +35,22 @@ Route::middleware(['auth', 'verified'])->group(function () {
     });
 });
 
-// --- Sahte ödeme sağlayıcısı (Bölüm 6): yalnızca seçiliyse tanımlı ---
-if (config('licensing.payment_provider') === 'fake') {
+// Yayındaki sürüm (build.sh paketin köküne VERSION yazar). Dağıtım betiği, sürüm değiştikten sonra
+// YENİ sürümün gerçekten yanıt verdiğini bununla doğrular (/up eski sürümde de 200 döner).
+Route::get('surum', fn () => response(is_file(base_path('VERSION')) ? trim(file_get_contents(base_path('VERSION'))) : 'yerel', 200, [
+    'Content-Type' => 'text/plain; charset=utf-8',
+    'Cache-Control' => 'no-store',
+]))->name('version');
+
+// --- Sahte ödeme sağlayıcısı (Bölüm 6) ---
+// fake-payment: sahte sağlayıcı kullanılamıyorsa (canlıda, izin verilmedikçe) bu adresler 404 döner.
+// Bölüm 7'deki "if (config(...))" kalıbı rota önbelleğine (route:cache) gömülüyordu; middleware her istekte karar verir.
+Route::middleware('fake-payment')->group(function () {
     Route::middleware('signed')->group(function () {
         Route::get('sahte-odeme/{order}', [FakeProviderController::class, 'show'])->name('fake-provider.show');
         Route::post('sahte-odeme/{order}', [FakeProviderController::class, 'store'])->name('fake-provider.store');
     });
     Route::post('webhooks/fake', FakeWebhookController::class)->name('webhooks.fake');
-}
+});
 
 require __DIR__.'/settings.php';

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Product;
+use App\Payments\FakeGateway;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -16,6 +17,8 @@ class StoreController extends Controller
                 ->with('plans:id,product_id,name,price,max_sites')
                 ->orderBy('id')
                 ->get(['id', 'name', 'slug', 'summary', 'description']),
+            // Canlıda sahte ödeme bilerek açıksa ziyaretçi uyarılır (Bölüm 10)
+            'demo' => FakeGateway::isDemo(),
         ]);
     }
 }

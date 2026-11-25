@@ -1,0 +1,12 @@
+# bin/komut.sh örneği — SSH olmadan tek seferlik komutlar (kur.sh bir kez çalıştırır, sonra SİLER).
+# Kullanım: bu dosyayı düzenleyip ~/apps/anahtarci/bin/komut.sh adıyla yükleyin; en geç 2 dakika
+# sonra ~/apps/anahtarci/log/kur.log'da çıktıyı görürsünüz. $PHP: kur.sh'teki PHP 8.5 yolu.
+
+# 1) Lisans imza anahtarı (yalnızca İLK kurulumda!). Gizli anahtar shared/.env'e yazılır;
+#    günlükte yalnızca AÇIK anahtar görünür (WordPress eklentisine gömülecek, gizli değildir).
+"$PHP" artisan license:keygen
+
+# 2) Yönetici hesabı. Şifre komut satırına yazılmaz: standart girdiden okunur.
+"$PHP" artisan user:create --name="Yönetici" --email=yonetici@ornek.com --role=admin --password-file=- <<'SIFRE'
+buraya-en-az-12-karakterlik-bir-sifre
+SIFRE

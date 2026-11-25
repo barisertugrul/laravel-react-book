@@ -48,10 +48,16 @@ function PlanCard({ plan, featured }: { plan: Plan; featured: boolean }) {
     );
 }
 
-export default function Store({ products }: { products: Product[] }) {
+export default function Store({ products, demo }: { products: Product[]; demo: boolean }) {
     return (
         <>
             <Head title="WordPress eklentileri" />
+            {demo && (
+                // Canlı demo sunucusu: sahte ödeme bilerek açık (Bölüm 10)
+                <div data-test="payment-demo" className="mb-6 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-700 dark:bg-amber-950 dark:text-amber-100">
+                    <strong>Demo:</strong> gerçek ödeme alınmaz. Ödeme sayfasında “Ödemeyi onayla”yı seçmeniz yeterli; lisans anahtarları yalnızca deneme içindir.
+                </div>
+            )}
             <section className="mb-10 rounded-2xl bg-indigo-950 px-6 py-10 text-white">
                 <h1 className="text-3xl font-semibold">Ajanslar için WordPress eklentileri</h1>
                 <p className="mt-2 max-w-2xl text-indigo-200">
