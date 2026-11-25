@@ -187,15 +187,20 @@ fi
 
 # --- 6. temizlik -------------------------------------------------------------
 rm -f "$PACKAGE" "$PACKAGE.sig"
+# DİKKAT: cPanel cron'unda (CageFS) /dev/fd yok → süreç ikamesi "<(...)" çalışmaz; düz dosya kullanılır.
 # Başarısız sürümlerin klasörleri (artık hiçbir istek onları kullanmıyor)
-while read -r FAILED; do
-    if [ -n "$FAILED" ] && [ "$FAILED" != "$VERSION" ]; then rm -rf "${APP_DIR:?}/releases/$FAILED"; fi
-done < <(cat "$APP_DIR/basarisiz.txt" 2>/dev/null || true)
+if [ -f "$APP_DIR/basarisiz.txt" ]; then
+    while read -r FAILED; do
+        if [ -n "$FAILED" ] && [ "$FAILED" != "$VERSION" ]; then rm -rf "${APP_DIR:?}/releases/$FAILED"; fi
+    done < "$APP_DIR/basarisiz.txt"
+fi
 ls -1d "$APP_DIR"/releases/* | sort -r | tail -n +"$((KEEP_RELEASES + 1))" | xargs -r rm -rf
 # Site klasöründe, tutulan sürümlerin hiçbirinde olmayan eski build dosyaları
-KEPT_ASSETS="$(find "$APP_DIR"/releases/*/public/build/assets -maxdepth 1 -type f -printf '%f\n' 2>/dev/null | sort -u || true)"
-if [ -n "$KEPT_ASSETS" ] && [ -d "$SITE_DIR/build/assets" ]; then
+KEPT_LIST="$APP_DIR/kept-assets.txt"
+find "$APP_DIR"/releases/*/public/build/assets -maxdepth 1 -type f -printf '%f\n' 2>/dev/null | sort -u > "$KEPT_LIST" || true
+if [ -s "$KEPT_LIST" ] && [ -d "$SITE_DIR/build/assets" ]; then
     find "$SITE_DIR/build/assets" -maxdepth 1 -type f -printf '%f\n' \
-        | { grep -vxF -f <(printf '%s\n' "$KEPT_ASSETS") || true; } \
+        | { grep -vxF -f "$KEPT_LIST" || true; } \
         | while read -r OLD; do rm -f "$SITE_DIR/build/assets/$OLD"; done
 fi
+rm -f "$KEPT_LIST"
