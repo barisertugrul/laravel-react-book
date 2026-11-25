@@ -1,0 +1,163 @@
+# ÖRNEK KOPYA: GitHub yalnızca deponun KÖKÜNDEKİ .github/workflows/ klasörünü çalıştırır.
+# Bu projeyi kendi deponuzun kökü yaparsanız paths ve working-directory satırlarını kaldırın.
+# Asıl dosya: .github/workflows/bolum-10-anahtarci.yml
+
+# Bölüm 10: Anahtarcı (lisans sunucusu). Kumanda'nın workflow'unun kopyası; yalnızca klasör ve adlar farklı.
+# Depoda birçok proje var; bu iş yalnızca Anahtarcı'nın klasörü değişince çalışır (paths).
+name: Anahtarcı (Bölüm 10)
+
+on:
+  push:
+    paths:
+      - 'projects/10-yayina-alma/anahtarci/**'
+      - '.github/workflows/bolum-10-anahtarci.yml'
+  pull_request:
+    paths:
+      - 'projects/10-yayina-alma/anahtarci/**'
+      - '.github/workflows/bolum-10-anahtarci.yml'
+  workflow_dispatch:
+    inputs:
+      hedef:
+        description: 'Paket hangi sunucu için derlensin? (deploy/targets/<hedef>.env)'
+        default: wsl
+
+permissions:
+  contents: read
+
+# Aynı dala art arda push edilirse eski çalışma iptal edilir
+concurrency:
+  group: anahtarci-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    working-directory: projects/10-yayina-alma/anahtarci
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    # Testler canlıdaki veritabanıyla (MySQL 8) koşar; yerelde SQLite'ta yeşil olan her şey burada da denenir
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_DATABASE: anahtarci_test
+          MYSQL_ROOT_PASSWORD: ci-sifresi
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -pci-sifresi"
+          --health-interval=5s --health-timeout=5s --health-retries=20
+
+    env:
+      DB_CONNECTION: mysql
+      DB_HOST: 127.0.0.1
+      DB_PORT: 3306
+      DB_DATABASE: anahtarci_test
+      DB_USERNAME: root
+      DB_PASSWORD: ci-sifresi
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # 2.40.0
+        with:
+          php-version: '8.5'
+          tools: composer:v2
+          coverage: none
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '26'
+          cache: npm
+          cache-dependency-path: projects/10-yayina-alma/anahtarci/package-lock.json
+
+      - name: Bağımlılıklar
+        run: |
+          composer install --no-interaction --prefer-dist --no-progress
+          npm ci --no-audit --no-fund
+
+      - name: Uygulamayı hazırla
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+          # Wayfinder'ın ürettiği dosyalar depoda yok; tip denetimi onlarsız derlenmez
+          php artisan wayfinder:generate --with-form
+
+      - name: Kod biçimi (Pint)
+        run: vendor/bin/pint --test
+
+      - name: Testler (MySQL 8)
+        run: php artisan test
+
+      - name: Tip denetimi
+        run: npm run types:check
+
+  build:
+    needs: test
+    # Pull request'lerde secret'lar yoktur (çatallanmış depodan gelen kod imza anahtarını görmemeli)
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # 2.40.0
+        with:
+          php-version: '8.5'
+          tools: composer:v2
+          coverage: none
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '26'
+          cache: npm
+          cache-dependency-path: projects/10-yayina-alma/anahtarci/package-lock.json
+
+      # Yerelde kullandığımız betiğin aynısı: composer --no-dev, Vite derlemesi, tar, imza
+      - name: Paketi derle ve imzala
+        env:
+          DEPLOY_SIGNING_KEY: ${{ secrets.DEPLOY_SIGNING_KEY }}
+        run: bash deploy/build.sh "${{ inputs.hedef || 'wsl' }}"
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: anahtarci-${{ inputs.hedef || 'wsl' }}-${{ github.run_number }}
+          path: |
+            projects/10-yayina-alma/anahtarci/build/*.tar.gz
+            projects/10-yayina-alma/anahtarci/build/*.tar.gz.sig
+          retention-days: 14
+          if-no-files-found: error
+
+  # Gerçek bir VPS'e SSH ile otomatik dağıtım. Depo değişkeni DEPLOY_HOST tanımlanmadıkça ÇALIŞMAZ.
+  # Kitapta kavram olarak anlatılır (WSL'deki sunucuya GitHub'dan erişilemez).
+  deploy:
+    needs: build
+    if: vars.DEPLOY_HOST != '' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: anahtarci-${{ inputs.hedef || 'wsl' }}-${{ github.run_number }}
+          path: paket
+
+      - name: Sunucuya gönder ve kur
+        working-directory: paket
+        env:
+          SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+          HOST: ${{ vars.DEPLOY_HOST }}
+        run: |
+          install -m 600 /dev/null ~/.ssh_key && printf '%s\n' "$SSH_KEY" > ~/.ssh_key
+          printf '%s\n' "$KNOWN_HOSTS" > ~/known_hosts
+          SSH="ssh -i $HOME/.ssh_key -o UserKnownHostsFile=$HOME/known_hosts"
+          PAKET=$(ls *.tar.gz)
+          scp -i ~/.ssh_key -o UserKnownHostsFile=~/known_hosts "$PAKET" "$PAKET.sig" "deploy@$HOST:"
+          $SSH "deploy@$HOST" "./deploy.sh $PAKET"

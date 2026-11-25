@@ -1,0 +1,5 @@
+# /etc/cron.d/kumanda — Laravel zamanlayıcısı her dakika; hangi işin ne zaman çalışacağına
+# routes/console.php karar verir (sites:check 15 dk, billing:renew saatlik, ...).
+# cron.d dosyalarında 6. alan kullanıcıdır. Dosya sonunda boş satır olmalı.
+* * * * * deploy cd /var/www/kumanda/current && /usr/bin/php artisan schedule:run >> /dev/null 2>&1
+
