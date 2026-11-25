@@ -7,6 +7,9 @@ export type Plan = {
     name: string;
     price: Cents;
     max_sites: number | null; // null: sınırsız
+    sort?: number;
+    orders_count?: number; // yönetim paneli: sipariş almış plan silinemez
+    licenses_count?: number;
 };
 
 export type Product = {
@@ -15,7 +18,10 @@ export type Product = {
     slug: string;
     summary: string;
     description: string | null;
+    is_active?: boolean;
     plans?: Plan[];
+    plans_count?: number;
+    licenses_count?: number; // lisans satıldıysa slug kilitlenir
 };
 
 export type OrderStatus = 'pending' | 'paid' | 'cancelled';

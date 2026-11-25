@@ -32,6 +32,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('licenses/{license}', [Admin\LicenseController::class, 'show'])->name('licenses.show');
         Route::post('licenses/{license}/revoke', [Admin\LicenseController::class, 'revoke'])->name('licenses.revoke');
         Route::post('licenses/{license}/extend', [Admin\LicenseController::class, 'extend'])->name('licenses.extend');
+
+        // Ürünler ve planları (Bölüm 10). Ürün silinmez (satılmış lisanslar bağlı), satıştan kaldırılır.
+        Route::resource('products', Admin\ProductController::class)->except(['show', 'destroy']);
+        Route::post('products/{product}/plans', [Admin\PlanController::class, 'store'])->name('plans.store');
+        Route::put('plans/{plan}', [Admin\PlanController::class, 'update'])->name('plans.update');
+        Route::delete('plans/{plan}', [Admin\PlanController::class, 'destroy'])->name('plans.destroy');
     });
 });
 

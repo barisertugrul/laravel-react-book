@@ -1,6 +1,7 @@
 import { Link, usePage } from '@inertiajs/react';
-import { FolderGit2, KeyRound, Store } from 'lucide-react';
+import { FolderGit2, KeyRound, Package, Store } from 'lucide-react';
 import AdminLicenseController from '@/actions/App/Http/Controllers/Admin/LicenseController';
+import AdminProductController from '@/actions/App/Http/Controllers/Admin/ProductController';
 import LicenseController from '@/actions/App/Http/Controllers/LicenseController';
 import AppLogo from '@/components/app-logo';
 import { NavFooter } from '@/components/nav-footer';
@@ -19,7 +20,10 @@ import { dashboard, home } from '@/routes';
 import type { NavItem } from '@/types';
 
 // Yönetici menüsü
-const adminNavItems: NavItem[] = [{ title: 'Lisanslar', href: AdminLicenseController.index(), icon: KeyRound }];
+const adminNavItems: NavItem[] = [
+    { title: 'Lisanslar', href: AdminLicenseController.index(), icon: KeyRound },
+    { title: 'Ürünler', href: AdminProductController.index(), icon: Package },
+];
 
 // Müşteri, ayarlar sayfasında bu düzeni görür: yönetim bağlantıları yok
 const customerNavItems: NavItem[] = [{ title: 'Lisanslarım', href: LicenseController.index(), icon: KeyRound }];

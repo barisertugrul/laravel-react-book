@@ -154,23 +154,26 @@ touch "$LSPHP_RESTART" 2>/dev/null || true
 log "  web: current.txt=$(cat "$APP_DIR/current.txt"); cli: current → $(readlink "$APP_DIR/current")"
 
 # --- 5. sağlık: YENİ sürüm yanıt veriyor mu? --------------------------------
-# /up tek başına yetmez (eski sürüm de 200 döner): /surum yeni sürümü döndürene kadar beklenir.
+# /up tek başına yetmez (eski sürüm de 200 döner): /surum yeni sürümü döndürmeli VE /up 200 olmalı.
+# İkisi BİRLİKTE ve süre boyunca tekrar denenir: paylaşımlı hostingte sunucunun kendi adresine bağlantısı
+# arada bir zaman aşımına uğrar; tek bir başarısız deneme sağlam sürümü geri aldırmamalı (kurulum-sorunlari 33).
 APP_URL="$(grep -E '^APP_URL=' "$APP_DIR/shared/.env" | cut -d= -f2- | tr -d '"')"
-START=$(date +%s); SERVED=""; NEXT_NOTE=30
+START=$(date +%s); SERVED=""; UP=""; HEALTHY=""; NEXT_NOTE=30
 while [ $(( $(date +%s) - START )) -lt "$WAIT_SECONDS" ]; do
     SERVED="$(curl -fsS --max-time 10 "$APP_URL/surum" 2>/dev/null || true)"
-    [ "$SERVED" = "$VERSION" ] && break
+    UP="$(curl -s -o /dev/null -w '%{http_code}' --max-time 10 "$APP_URL/up" 2>/dev/null || true)"
+    if [ "$SERVED" = "$VERSION" ] && [ "$UP" = 200 ]; then HEALTHY=1; break; fi
     if [ $(( $(date +%s) - START )) -ge "$NEXT_NOTE" ]; then
-        log "  ${NEXT_NOTE} sn: hâlâ görülen ${SERVED:-yanıt yok}"; NEXT_NOTE=$(( NEXT_NOTE + 30 ))
+        log "  ${NEXT_NOTE} sn: görülen ${SERVED:-yanıt yok}, /up ${UP:-yanıt yok}"; NEXT_NOTE=$(( NEXT_NOTE + 30 ))
     fi
     sleep 5
 done
 WAITED=$(( $(date +%s) - START ))
 
-if [ "$SERVED" = "$VERSION" ] && curl -fsS -o /dev/null --max-time 10 "$APP_URL/up"; then
+if [ -n "$HEALTHY" ]; then
     log "✓ Yayında: $VERSION (yeni sürüm ${WAITED} sn sonra yanıt verdi)"
 else
-    log "✗ $VERSION yanıt vermedi (${WAITED} sn; görülen: ${SERVED:-yanıt yok}): önceki sürüme dönülüyor"
+    log "✗ $VERSION sağlıklı değil (${WAITED} sn; görülen: ${SERVED:-yanıt yok}, /up: ${UP:-yanıt yok}): önceki sürüme dönülüyor"
     if [ -n "$PREVIOUS" ]; then
         set_web_version "$PREVIOUS"
         set_cli_release "$APP_DIR/releases/$PREVIOUS"
