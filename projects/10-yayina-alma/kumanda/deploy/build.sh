@@ -14,6 +14,9 @@ TARGET_FILE="$ROOT/deploy/targets/$TARGET.env"
 # Sürüm = UTC zaman damgası; sunucuda releases/<sürüm> klasörünün adı olur
 VERSION="$(date -u +%Y%m%d%H%M%S)"
 WORK="$(mktemp -d)"
+# mktemp -d klasörü 0700 açar ve tar bu izni paketin KÖKÜNE yazar: sunucuda release klasörüne
+# Nginx (www-data) giremez, /up başarısız olur. Windows'ta (Git Bash) görünmez, Linux CI'da çıkar.
+chmod 755 "$WORK"
 trap 'rm -rf "$WORK"' EXIT
 
 echo "→ Dosyalar kopyalanıyor (yalnızca git'in bildiği dosyalar; .env, vendor, node_modules hariç)"
