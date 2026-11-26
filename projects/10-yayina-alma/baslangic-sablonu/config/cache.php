@@ -3,7 +3,6 @@
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
-use stdClass;
 
 return [
 

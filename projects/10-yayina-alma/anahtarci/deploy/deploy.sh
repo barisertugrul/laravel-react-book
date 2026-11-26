@@ -24,6 +24,9 @@ RELEASE="$APP_DIR/releases/$VERSION"
 
 echo "→ $VERSION açılıyor"
 mkdir -p "$RELEASE"
+# Sürüm çevrilmeden önce bir komut hata verirse (ör. migrate, config:cache) yarım klasör silinir:
+# yoksa aynı paket yeniden denendiğinde "Bu sürüm zaten var" der. Ziyaretçiler hâlâ eski sürümde.
+trap 'echo "✗ $VERSION hazırlanırken hata (satır $LINENO): yayına alınmadı" >&2; rm -rf "$RELEASE"' ERR
 tar -xzf "$PACKAGE" -C "$RELEASE"
 
 echo "→ Kalıcı dosyalar bağlanıyor"
@@ -36,6 +39,7 @@ php artisan storage:link --no-interaction
 php artisan migrate --force --no-interaction
 php artisan optimize          # config, route, view ve event önbellekleri
 
+trap - ERR   # buradan sonra hata yönetimini sağlık denetimi üstlenir
 echo "→ current yeni sürüme çevriliyor"
 PREVIOUS="$(readlink "$APP_DIR/current" || true)"   # sağlık denetimi başarısız olursa geri dönülecek sürüm
 # ln + mv -T: symlink tek bir sistem çağrısıyla (rename) değişir; arada "current yok" anı olmaz

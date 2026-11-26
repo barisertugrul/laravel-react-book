@@ -48,6 +48,35 @@ class BackupConfigTest extends TestCase
         $this->assertNotContains(base_path(), config('backup.backup.source.files.include'));
     }
 
+    public function test_empty_env_values_fall_back_to_safe_defaults(): void
+    {
+        // .env.example'daki "BACKUP_NOTIFY_EMAIL=" boş dize döndürür; env()'in varsayılanı yalnızca
+        // değişken HİÇ yoksa devreye girer. spatie/laravel-backup açılışta adresi doğrular:
+        // boş adres her artisan komutunu düşürüyordu (Bölüm 10, CI'da bulundu).
+        $keys = ['BACKUP_NOTIFY_EMAIL', 'BACKUP_DISKS', 'ALERT_EMAIL'];
+        $old = array_map(fn ($k) => $_ENV[$k] ?? null, array_combine($keys, $keys));
+
+        try {
+            foreach ($keys as $key) {
+                $_ENV[$key] = '';
+                $_SERVER[$key] = '';
+            }
+            $config = require config_path('backup.php');
+        } finally {
+            foreach ($old as $key => $value) {
+                if ($value === null) {
+                    unset($_ENV[$key], $_SERVER[$key]);
+                } else {
+                    $_ENV[$key] = $_SERVER[$key] = $value;
+                }
+            }
+        }
+
+        $this->assertNotFalse(filter_var($config['notifications']['mail']['to'], FILTER_VALIDATE_EMAIL));
+        $this->assertSame(['backups'], $config['backup']['destination']['disks']);
+        $this->assertSame(['backups'], $config['monitor_backups'][0]['disks']);
+    }
+
     private function normalize(string $path): string
     {
         return rtrim(str_replace('\\', '/', $path), '/');

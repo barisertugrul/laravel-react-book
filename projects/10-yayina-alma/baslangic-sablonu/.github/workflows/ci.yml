@@ -86,6 +86,13 @@ jobs:
       - name: Testler (MySQL 8)
         run: php artisan test
 
+      # Canlıda dağıtım betiği 'php artisan optimize' çalıştırır. Testler önbelleğe almaz: config
+      # dosyasındaki bir PHP uyarısı ya da önbelleğe alınamayan bir rota ancak burada yakalanır.
+      - name: Önbellekler (canlıdaki optimize)
+        run: |
+          php artisan optimize
+          php artisan optimize:clear
+
       - name: Tip denetimi
         run: npm run types:check
 

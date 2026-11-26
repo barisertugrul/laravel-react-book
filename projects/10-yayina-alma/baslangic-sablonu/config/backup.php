@@ -166,7 +166,7 @@ return [
              */
             // Örn. BACKUP_DISKS=backups,s3 → aynı yedek hem sunucuya hem uzak depoya.
             // Yalnızca aynı sunucudaki yedek, sunucu kaybolunca onunla birlikte kaybolur.
-            'disks' => explode(',', env('BACKUP_DISKS', 'backups')),
+            'disks' => explode(',', env('BACKUP_DISKS') ?: 'backups'),
 
             /*
              * Determines whether to allow backups to continue when some targets fail instead of failing completely.
@@ -238,7 +238,9 @@ return [
         'notifiable' => Notifiable::class,
 
         'mail' => [
-            'to' => env('BACKUP_NOTIFY_EMAIL', 'yonetici@example.com'),
+            // Boş bırakılırsa (BACKUP_NOTIFY_EMAIL=) env() '' döndürür ve paket açılışta hata verir:
+            // ?: boş dizeyi de yakalar. Sıra: yedek adresi → kritik hata adresi → örnek adres.
+            'to' => env('BACKUP_NOTIFY_EMAIL') ?: (env('ALERT_EMAIL') ?: 'yonetici@example.com'),
 
             'from' => [
                 'address' => env('MAIL_FROM_ADDRESS', 'hello@example.com'),
@@ -299,7 +301,7 @@ return [
     'monitor_backups' => [
         [
             'name' => env('APP_NAME', 'laravel-backup'),
-            'disks' => explode(',', env('BACKUP_DISKS', 'backups')),
+            'disks' => explode(',', env('BACKUP_DISKS') ?: 'backups'),
             'health_checks' => [
                 MaximumAgeInDays::class => 1,
                 MaximumStorageInMegabytes::class => 5000,
