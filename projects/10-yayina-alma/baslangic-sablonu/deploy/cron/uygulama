@@ -1,0 +1,5 @@
+# /etc/cron.d/uygulama — Laravel zamanlayıcısı her dakika; hangi işin ne zaman çalışacağına
+# routes/console.php karar verir (backup:clean 01:00, backup:run 01:30, backup:monitor 09:00, ...).
+# cron.d dosyalarında 6. alan kullanıcıdır. Dosya sonunda boş satır olmalı.
+* * * * * deploy cd /var/www/uygulama/current && /usr/bin/php artisan schedule:run >> /dev/null 2>&1
+
