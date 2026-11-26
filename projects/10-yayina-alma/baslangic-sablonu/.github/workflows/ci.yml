@@ -1,0 +1,204 @@
+# Sürekli entegrasyon + imzalı dağıtım paketi (Bölüm 10).
+# Bu klasör deponuzun KÖKÜ olduğunda olduğu gibi çalışır. Kitabın deposunda asıl dosya:
+# .github/workflows/bolum-10-sablon.yml (orada paths ve working-directory var).
+#
+# Gerekenler: secrets.DEPLOY_SIGNING_KEY (deploy/keygen.php, bkz. deploy/README.md).
+# İsteğe bağlı: vars.DEPLOY_HOST + secrets.DEPLOY_SSH_KEY + secrets.DEPLOY_KNOWN_HOSTS (VPS'e SSH dağıtımı).
+name: CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      hedef:
+        description: 'Paket hangi sunucu için derlensin? (deploy/targets/<hedef>.env)'
+        default: wsl
+
+permissions:
+  contents: read
+
+# Aynı dala art arda push edilirse eski çalışma iptal edilir
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    # Testler canlıdaki veritabanıyla (MySQL 8) koşar; yerelde SQLite'ta yeşil olan her şey burada da denenir
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_DATABASE: uygulama_test
+          MYSQL_ROOT_PASSWORD: ci-sifresi
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -pci-sifresi"
+          --health-interval=5s --health-timeout=5s --health-retries=20
+
+    env:
+      DB_CONNECTION: mysql
+      DB_HOST: 127.0.0.1
+      DB_PORT: 3306
+      DB_DATABASE: uygulama_test
+      DB_USERNAME: root
+      DB_PASSWORD: ci-sifresi
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # 2.40.0
+        with:
+          php-version: '8.5'
+          tools: composer:v2
+          coverage: none
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '26'
+          cache: npm
+
+      - name: Bağımlılıklar
+        run: |
+          composer install --no-interaction --prefer-dist --no-progress
+          npm ci --no-audit --no-fund
+
+      # Bilinen güvenlik açığı olan bir PHP paketi varsa iş kırmızı olur (composer.lock'a göre)
+      - name: Güvenlik denetimi (composer audit)
+        run: composer audit --locked
+
+      - name: Uygulamayı hazırla
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+          # Wayfinder'ın ürettiği dosyalar depoda yok; tip denetimi onlarsız derlenmez
+          php artisan wayfinder:generate --with-form
+
+      - name: Kod biçimi (Pint)
+        run: vendor/bin/pint --test
+
+      - name: Testler (MySQL 8)
+        run: php artisan test
+
+      - name: Tip denetimi
+        run: npm run types:check
+
+  build:
+    needs: test
+    # Pull request'lerde secret'lar yoktur (çatallanmış depodan gelen kod imza anahtarını görmemeli)
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # 2.40.0
+        with:
+          php-version: '8.5'
+          tools: composer:v2
+          coverage: none
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '26'
+          cache: npm
+
+      # Yerelde kullandığımız betiğin aynısı: composer --no-dev, Vite derlemesi, tar, imza
+      - name: Paketi derle ve imzala
+        env:
+          DEPLOY_SIGNING_KEY: ${{ secrets.DEPLOY_SIGNING_KEY }}
+        run: bash deploy/build.sh "${{ inputs.hedef || 'wsl' }}"
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: uygulama-${{ inputs.hedef || 'wsl' }}-${{ github.run_number }}
+          path: |
+            build/*.tar.gz
+            build/*.tar.gz.sig
+          retention-days: 14
+          if-no-files-found: error
+
+  # Paylaşımlı hosting (cPanel): SSH yok → sunucu paketi KENDİSİ çeker (deploy/cpanel/kur.sh).
+  # Paket sabit adlı bir GitHub Release'e konur; depo herkese açıksa indirmek token istemez.
+  # Kullanmıyorsanız bu işi silin.
+  cpanel:
+    needs: test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write   # yalnızca bu iş release yazabilir; workflow'un geri kalanı salt okunur
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # 2.40.0
+        with:
+          php-version: '8.5'
+          tools: composer:v2
+          coverage: none
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '26'
+          cache: npm
+
+      - name: Paketi derle ve imzala (cPanel)
+        env:
+          DEPLOY_SIGNING_KEY: ${{ secrets.DEPLOY_SIGNING_KEY }}
+        run: bash deploy/build.sh cpanel
+
+      - name: GitHub Releases'a koy
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          PAKET=$(ls build/uygulama-cpanel-*.tar.gz)
+          SURUM=$(tar -xzOf "$PAKET" ./VERSION)
+          # Sunucu sabit adları indirir; sürüm surum.txt'de
+          cp "$PAKET" build/uygulama-cpanel.tar.gz
+          cp "$PAKET.sig" build/uygulama-cpanel.tar.gz.sig
+          echo "$SURUM" > build/surum.txt
+          gh release view uygulama-cpanel >/dev/null 2>&1 || gh release create uygulama-cpanel \
+              --prerelease --target "$GITHUB_SHA" --title "cPanel paketi" \
+              --notes "Paylaşımlı hosting için imzalı paket. Sunucudaki deploy/cpanel/kur.sh bu adresten çeker."
+          gh release upload uygulama-cpanel build/uygulama-cpanel.tar.gz build/uygulama-cpanel.tar.gz.sig --clobber
+          # surum.txt EN SON: sunucu yeni sürümü ancak paket ve imza yerindeyken görür
+          gh release upload uygulama-cpanel build/surum.txt --clobber
+          echo "Yayınlandı: $SURUM"
+
+  # Kendi sunucunuza (VPS) SSH ile otomatik dağıtım. Depo değişkeni DEPLOY_HOST tanımlanmadıkça ÇALIŞMAZ.
+  deploy:
+    needs: build
+    if: vars.DEPLOY_HOST != '' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: uygulama-${{ inputs.hedef || 'wsl' }}-${{ github.run_number }}
+          path: paket
+
+      - name: Sunucuya gönder ve kur
+        working-directory: paket
+        env:
+          SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+          HOST: ${{ vars.DEPLOY_HOST }}
+        run: |
+          install -m 600 /dev/null ~/.ssh_key && printf '%s\n' "$SSH_KEY" > ~/.ssh_key
+          printf '%s\n' "$KNOWN_HOSTS" > ~/known_hosts
+          SSH="ssh -i $HOME/.ssh_key -o UserKnownHostsFile=$HOME/known_hosts"
+          PAKET=$(ls *.tar.gz)
+          scp -i ~/.ssh_key -o UserKnownHostsFile=~/known_hosts "$PAKET" "$PAKET.sig" "deploy@$HOST:"
+          $SSH "deploy@$HOST" "bash ./deploy.sh $PAKET"

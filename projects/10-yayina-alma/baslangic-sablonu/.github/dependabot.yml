@@ -1,3 +1,5 @@
+# Haftalık bağımlılık güncellemeleri (Bölüm 10). Güvenlik açığı duyurulan paketler için
+# Dependabot ayrıca hemen PR açar; CI'daki "composer audit" adımı da kırmızı olur.
 version: 2
 updates:
   - package-ecosystem: "github-actions"
@@ -8,5 +10,27 @@ updates:
       default-days: 5
     groups:
       github-actions:
+        patterns:
+          - "*"
+
+  - package-ecosystem: "composer"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    cooldown:
+      default-days: 5
+    groups:
+      composer:
+        patterns:
+          - "*"
+
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    cooldown:
+      default-days: 5
+    groups:
+      npm:
         patterns:
           - "*"

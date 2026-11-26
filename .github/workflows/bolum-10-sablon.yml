@@ -1,0 +1,135 @@
+# Bölüm 10: kendi başlangıç şablonumuz için sürekli entegrasyon ve paket derleme.
+# Şablonun kendi deposunda kullanılacak sürüm: projects/10-yayina-alma/baslangic-sablonu/.github/workflows/ci.yml
+# (orada ayrıca cPanel release ve VPS dağıtım işleri var; şablonun yayında bir sunucusu olmadığı için burada yok).
+name: Başlangıç şablonu (Bölüm 10)
+
+on:
+  push:
+    paths:
+      - 'projects/10-yayina-alma/baslangic-sablonu/**'
+      - '.github/workflows/bolum-10-sablon.yml'
+  pull_request:
+    paths:
+      - 'projects/10-yayina-alma/baslangic-sablonu/**'
+      - '.github/workflows/bolum-10-sablon.yml'
+  workflow_dispatch:
+    inputs:
+      hedef:
+        description: 'Paket hangi sunucu için derlensin? (deploy/targets/<hedef>.env)'
+        default: wsl
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sablon-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    working-directory: projects/10-yayina-alma/baslangic-sablonu
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    # Testler canlıdaki veritabanıyla (MySQL 8) koşar; yerelde SQLite'ta yeşil olan her şey burada da denenir
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_DATABASE: uygulama_test
+          MYSQL_ROOT_PASSWORD: ci-sifresi
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -pci-sifresi"
+          --health-interval=5s --health-timeout=5s --health-retries=20
+
+    env:
+      DB_CONNECTION: mysql
+      DB_HOST: 127.0.0.1
+      DB_PORT: 3306
+      DB_DATABASE: uygulama_test
+      DB_USERNAME: root
+      DB_PASSWORD: ci-sifresi
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # 2.40.0
+        with:
+          php-version: '8.5'
+          tools: composer:v2
+          coverage: none
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '26'
+          cache: npm
+          cache-dependency-path: projects/10-yayina-alma/baslangic-sablonu/package-lock.json
+
+      - name: Bağımlılıklar
+        run: |
+          composer install --no-interaction --prefer-dist --no-progress
+          npm ci --no-audit --no-fund
+
+      # Bilinen güvenlik açığı olan bir PHP paketi varsa iş kırmızı olur (composer.lock'a göre)
+      - name: Güvenlik denetimi (composer audit)
+        run: composer audit --locked
+
+      - name: Uygulamayı hazırla
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+          # Wayfinder'ın ürettiği dosyalar depoda yok; tip denetimi onlarsız derlenmez
+          php artisan wayfinder:generate --with-form
+
+      - name: Kod biçimi (Pint)
+        run: vendor/bin/pint --test
+
+      - name: Testler (MySQL 8)
+        run: php artisan test
+
+      - name: Tip denetimi
+        run: npm run types:check
+
+  build:
+    needs: test
+    # Pull request'lerde secret'lar yoktur (çatallanmış depodan gelen kod imza anahtarını görmemeli)
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # 2.40.0
+        with:
+          php-version: '8.5'
+          tools: composer:v2
+          coverage: none
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '26'
+          cache: npm
+          cache-dependency-path: projects/10-yayina-alma/baslangic-sablonu/package-lock.json
+
+      # Yerelde kullandığımız betiğin aynısı: composer --no-dev, Vite derlemesi, tar, imza
+      - name: Paketi derle ve imzala
+        env:
+          DEPLOY_SIGNING_KEY: ${{ secrets.DEPLOY_SIGNING_KEY }}
+        run: bash deploy/build.sh "${{ inputs.hedef || 'wsl' }}"
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: uygulama-${{ inputs.hedef || 'wsl' }}-${{ github.run_number }}
+          path: |
+            projects/10-yayina-alma/baslangic-sablonu/build/*.tar.gz
+            projects/10-yayina-alma/baslangic-sablonu/build/*.tar.gz.sig
+          retention-days: 14
+          if-no-files-found: error
