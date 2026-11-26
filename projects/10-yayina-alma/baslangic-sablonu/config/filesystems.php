@@ -38,6 +38,14 @@ return [
             'report' => false,
         ],
 
+        // Yedekler (spatie/laravel-backup) yedeklenen klasörün (storage/app) DIŞINDA durur:
+        // içinde olsaydı her yedek öncekileri de içerirdi
+        'backups' => [
+            'driver' => 'local',
+            'root' => storage_path('backups'),
+            'throw' => true,
+        ],
+
         'public' => [
             'driver' => 'local',
             'root' => storage_path('app/public'),
