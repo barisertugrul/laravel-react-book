@@ -63,8 +63,16 @@ function TwoFactorSetupStep({
     errors: string[];
 }) {
     const { resolvedAppearance } = useAppearance();
-    const [copiedText, copy] = useClipboard();
+    const [copiedText, copy, failedText] = useClipboard();
     const IconComponent = copiedText === manualSetupKey ? Check : Copy;
+    const keyInput = useRef<HTMLInputElement>(null);
+
+    // Kopyalanamazsa (ör. düz HTTP) anahtar seçili bırakılır: Ctrl+C yeter
+    const copyKey = async (key: string) => {
+        if (!(await copy(key))) {
+            keyInput.current?.select();
+        }
+    };
 
     return (
         <>
@@ -117,14 +125,17 @@ function TwoFactorSetupStep({
                             ) : (
                                 <>
                                     <input
+                                        ref={keyInput}
                                         type="text"
                                         readOnly
                                         value={manualSetupKey}
                                         className="h-full w-full bg-background p-3 text-foreground outline-none"
                                     />
                                     <button
-                                        onClick={() => copy(manualSetupKey)}
+                                        type="button"
+                                        onClick={() => copyKey(manualSetupKey)}
                                         className="border-l border-border px-3 hover:bg-muted"
+                                        aria-label="Anahtarı kopyala"
                                     >
                                         <IconComponent className="w-4" />
                                     </button>
@@ -132,6 +143,11 @@ function TwoFactorSetupStep({
                             )}
                         </div>
                     </div>
+                    {failedText && failedText === manualSetupKey && (
+                        <p role="alert" className="text-sm text-destructive">
+                            Kopyalanamadı: anahtar seçildi, Ctrl+C ile kopyalayın.
+                        </p>
+                    )}
                 </>
             )}
         </>
