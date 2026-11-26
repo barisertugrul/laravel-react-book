@@ -1,6 +1,9 @@
 <?php
 
+use Carbon\CarbonImmutable;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
+use stdClass;
 
 return [
 
@@ -131,6 +134,14 @@ return [
     |
     */
 
-    'serializable_classes' => false,
+    // Laravel 13 varsayılanı false: önbellekten hiçbir nesne geri açılmaz. Pulse'un kartları
+    // sonuçlarını 5 sn önbelleğe koyar (Collection, stdClass, CarbonImmutable); false iken panel ilk
+    // yoklamada 500 verir (Bölüm 10, Kumanda'da canlıda bulundu). Yalnızca bu düz veri sınıflarına izin
+    // veriyoruz: __destruct/__wakeup ile iş yapan "gadget" sınıfları yine açılmaz. Bkz. tests/Feature/PulseCacheTest.
+    'serializable_classes' => [
+        Collection::class,
+        stdClass::class,
+        CarbonImmutable::class,
+    ],
 
 ];

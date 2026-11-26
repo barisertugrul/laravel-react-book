@@ -2,6 +2,7 @@
 
 use App\Http\Middleware\HandleAppearance;
 use App\Http\Middleware\HandleInertiaRequests;
+use App\Support\CriticalErrorAlerter;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -27,4 +28,10 @@ return Application::configure(basePath: dirname(__DIR__))
         $exceptions->shouldRenderJsonWhen(
             fn (Request $request) => $request->is('api/*') || $request->expectsJson(),
         );
+
+        // Kritik hata e-postası (ALERT_EMAIL boşsa kapalı). Loglanan her hata buradan da geçer
+        // (404, doğrulama gibi dontReport istisnaları gelmez); stop() çağrılmadığı için normal loglama sürer.
+        $exceptions->report(function (Throwable $e): void {
+            app(CriticalErrorAlerter::class)->handle($e);
+        });
     })->create();
