@@ -13,6 +13,8 @@ Kitaptaki her bölümün çalışan projesi bu depodadır.
 | 7 | Satın Alma Sonrası Lisans | `projects/07-lisans` | `bolum-07` |
 | 8 | WP Ajans Paneli I (Kumanda) | `projects/08-ajans-paneli` | `bolum-08` |
 | 9 | WP Ajans Paneli II (toplu işlem, lisans, abonelik) | `projects/09-ajans-paneli-2` | `bolum-09` |
+| 10 | Yayına Alma (Kumanda, Anahtarcı ve başlangıç şablonu canlıda) | `projects/10-yayina-alma` | `bolum-10` |
+| 11 | Yedekleme, İzleme ve Başlangıç Şablonu | `projects/10-yayina-alma` | `bolum-11` |
 
 ## Bir projeyi çalıştırmak
 
@@ -35,8 +37,10 @@ Bölüm 8'deki WordPress eklentisi `projects/08-ajans-paneli/wp-plugin/ajans-asi
 
 Bölüm 9'da demo siteler `http://kafe.localhost:9401`, `klinik.localhost:9402` ve `magaza.localhost:9403` adreslerinde açılır (`cd projects/09-ajans-paneli-2 && npm run wp-demo`). Lisansı denemek için Bölüm 7'nin Anahtarcı'sı da çalışmalı: `cd projects/07-lisans && npm run build && php artisan serve --host=127.0.0.1 --port=8001`.
 
+Bölüm 10 ve 11'de üç proje `projects/10-yayina-alma` altında: `kumanda`, `anahtarci` ve `baslangic-sablonu`. Her biri kendi `deploy/` klasöründe sunucuya (Nginx + PHP-FPM) ve paylaşımlı hostinge (cPanel) dağıtım betikleri ve `deploy/README.md` taşır. CI iş akışları depo kökündeki `.github/workflows/` klasöründe, Dependabot ayarı `.github/dependabot.yml` dosyasında. Yeni bir projeye başlamak için `baslangic-sablonu` klasörünü kopyalayın: Türkçe arayüz, kapalı kayıt, `user:create`, yedekleme, Pulse ve hata e-postası hazır gelir.
+
 Belirli bir bölümün bittiği hali görmek için: `git checkout bolum-01`
 
 ## Klasörler
 - `projects/` — bölüm projeleri
-- `packages/` — bölümlerle büyüyen ortak başlangıç kiti (Bölüm 2'den itibaren)
+- `.github/` — CI iş akışları ve Dependabot (Bölüm 10'dan itibaren)
