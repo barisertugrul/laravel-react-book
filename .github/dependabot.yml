@@ -1,0 +1,46 @@
+# Kitabın deposu için bağımlılık güncellemeleri (Bölüm 10).
+# Dependabot YALNIZCA bu dosyayı (depo kökü, varsayılan dal) okur; projelerin içindeki
+# .github/dependabot.yml dosyaları okurun kendi deposu için örnektir.
+# Yalnızca Bölüm 10 projeleri izlenir: önceki bölümlerin kodu bölüm etiketiyle donmuş durumda,
+# onların güncellemeleri ayrı bir düzeltme commit'iyle yapılır.
+version: 2
+updates:
+  # Depo kökündeki iş akışlarının (bolum-10-*.yml) kullandığı eylemler
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    cooldown:
+      default-days: 5
+    groups:
+      github-actions:
+        patterns:
+          - "*"
+
+  - package-ecosystem: "composer"
+    directories:
+      - "/projects/10-yayina-alma/kumanda"
+      - "/projects/10-yayina-alma/anahtarci"
+      - "/projects/10-yayina-alma/baslangic-sablonu"
+    schedule:
+      interval: "weekly"
+    cooldown:
+      default-days: 5
+    groups:
+      composer:
+        patterns:
+          - "*"
+
+  - package-ecosystem: "npm"
+    directories:
+      - "/projects/10-yayina-alma/kumanda"
+      - "/projects/10-yayina-alma/anahtarci"
+      - "/projects/10-yayina-alma/baslangic-sablonu"
+    schedule:
+      interval: "weekly"
+    cooldown:
+      default-days: 5
+    groups:
+      npm:
+        patterns:
+          - "*"
